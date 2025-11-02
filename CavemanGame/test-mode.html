@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cave-place Health and Safety - TEST MODE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(to bottom, #2c1810, #1a0f08);
+            color: #f4e4c1;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .test-mode-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #ff6b35;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            z-index: 10000;
+            font-size: 1.2em;
+        }
+
+        .game-container {
+            max-width: 1400px;
+            margin: 60px auto 0;
+            padding: 20px;
+        }
+
+        .test-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(139, 69, 19, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            border: 3px solid #d2691e;
+            z-index: 9999;
+            max-width: 300px;
+        }
+
+        .test-controls h3 {
+            margin-bottom: 10px;
+            color: #ffa500;
+        }
+
+        .test-btn {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            font-size: 0.9em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Comic Sans MS', cursive;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            font-weight: bold;
+        }
+
+        .test-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .test-btn.danger {
+            background: linear-gradient(135deg, #f44336, #da190b);
+        }
+
+        .test-btn.info {
+            background: linear-gradient(135deg, #2196F3, #0b7dda);
+        }
+
+        /* Include all styles from the main game */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            max-width: 300px;
+            height: auto;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .game-status {
+            background: rgba(0,0,0,0.6);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 3px solid #8b4513;
+        }
+
+        .timer {
+            font-size: 2.5em;
+            color: #ff6b35;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .timer.warning {
+            color: #ff0000;
+            animation: pulse 0.5s infinite;
+        }
+
+        .timer.prep {
+            color: #ffa500;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .phase-indicator {
+            text-align: center;
+            font-size: 1.5em;
+            color: #ffa500;
+            margin: 10px 0;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .wisdom-display {
+            background: rgba(139, 69, 19, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 2px solid #d2691e;
+        }
+
+        .wisdom-display h3 {
+            color: #ffa500;
+            margin-bottom: 10px;
+        }
+
+        .cave-scene {
+            position: relative;
+            min-height: 500px;
+            background: url('cave-wall.png') center center no-repeat;
+            background-size: cover;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .cave-scene::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: url('cave-floor.png') center bottom no-repeat;
+            background-size: cover;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .fire-container {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .fire {
+            width: 100%;
+            height: 100%;
+            background: url('fire-animation.gif') center center no-repeat;
+            background-size: contain;
+        }
+
+        .players-container {
+            position: relative;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            min-height: 350px;
+            padding: 20px;
+            flex-wrap: wrap;
+            z-index: 3;
+        }
+
+        .player {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .player.storyteller {
+            transform: scale(1.3);
+        }
+
+        .player.storyteller::before {
+            content: '🔥 STORYTELLER 🔥';
+            position: absolute;
+            top: -40px;
+            font-size: 0.8em;
+            color: #ff6b35;
+            font-weight: bold;
+            animation: glow 1s infinite alternate;
+            white-space: nowrap;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #ff6b35; }
+            to { text-shadow: 0 0 20px #ff6b35, 0 0 30px #ff4500; }
+        }
+
+        .player-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(139, 69, 19, 0.3);
+            border: 4px solid #d2691e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .player-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .player.talking .player-avatar {
+            animation: jiggle 0.2s infinite;
+        }
+
+        .player.bonked .player-avatar {
+            animation: bonkShake 0.5s ease;
+        }
+
+        @keyframes jiggle {
+            0%, 100% { transform: rotate(-2deg) translateY(-2px); }
+            50% { transform: rotate(2deg) translateY(2px); }
+        }
+
+        @keyframes bonkShake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            75% { transform: rotate(15deg); }
+        }
+
+        .player-name {
+            font-weight: bold;
+            color: #ffa500;
+            margin-bottom: 5px;
+        }
+
+        .bonk-counter {
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .storyteller-section, .response-section {
+            background: rgba(139, 69, 19, 0.6);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 3px solid #d2691e;
+        }
+
+        .wisdom-input, .guess-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            border-radius: 10px;
+            border: 3px solid #8b4513;
+            margin: 15px 0;
+            background: rgba(244, 228, 193, 0.9);
+            font-family: 'Comic Sans MS', cursive;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.3em;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: 'Comic Sans MS', cursive;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #ff6b35, #ff4500);
+            color: white;
+        }
+
+        .btn-bonk {
+            background: linear-gradient(135deg, #f44336, #da190b);
+            color: white;
+            font-size: 1.1em;
+            padding: 12px 25px;
+        }
+
+        .responses-display {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 600px;
+            z-index: 4;
+        }
+
+        .response-bubble {
+            background: rgba(244, 228, 193, 0.95);
+            color: #4a2511;
+            padding: 12px 20px;
+            border-radius: 15px;
+            margin: 8px 0;
+            border: 2px solid #8b4513;
+            animation: floatIn 0.5s ease;
+        }
+
+        @keyframes floatIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .response-card {
+            background: rgba(244, 228, 193, 0.9);
+            color: #4a2511;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 2px solid #8b4513;
+            cursor: pointer;
+        }
+
+        .response-card:hover {
+            transform: scale(1.02);
+        }
+
+        .game-over-screen {
+            background: rgba(0,0,0,0.9);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 4px solid #8b4513;
+        }
+
+        .game-over-graphic {
+            max-width: 800px;
+            width: 100%;
+            height: auto;
+            margin: 20px auto;
+            display: block;
+        }
+
+        .enlightenment {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #8b4513;
+            padding: 30px;
+            border-radius: 20px;
+            animation: enlighten 2s infinite alternate;
+        }
+
+        @keyframes enlighten {
+            from { box-shadow: 0 0 20px #ffd700; }
+            to { box-shadow: 0 0 40px #ffd700, 0 0 60px #ffed4e; }
+        }
+
+        .sound-toggle {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(139, 69, 19, 0.8);
+            border: 2px solid #d2691e;
+            border-radius: 10px;
+            cursor: pointer;
+            color: #f4e4c1;
+            font-size: 1.2em;
+            z-index: 1000;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-mode-banner">
+        🧪 TEST MODE - Single Player Testing 🧪
+    </div>
+
+    <div class="sound-toggle" onclick="toggleSound()">🔊 Sound: ON</div>
+    
+    <div class="test-controls">
+        <h3>🧪 Test Controls</h3>
+        <button class="test-btn" onclick="testStartGame()">Start Game (3 Players)</button>
+        <button class="test-btn info" onclick="testAddPlayer()">Add Player</button>
+        <button class="test-btn danger" onclick="testBonkStoryteller()">Force BONK Storyteller</button>
+        <button class="test-btn" onclick="testAutoGuess()">Auto-Submit Guess</button>
+        <button class="test-btn" onclick="testAutoBonk()">Auto-Submit BONK</button>
+        <button class="test-btn" onclick="testWinGame()">Force WIN</button>
+        <button class="test-btn danger" onclick="testLoseGame()">Force LOSE</button>
+        <button class="test-btn info" onclick="testPlayAllSounds()">Test All Sounds</button>
+    </div>
+
+    <div class="game-container">
+        <div class="header">
+            <img src="game-logo.png" alt="Cave-place Health and Safety" class="logo">
+            <p style="color: #ff6b35; margin-top: 10px;">Single Player Test Mode - All Features Available</p>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen">
+            <div class="game-status">
+                <div class="phase-indicator" id="phaseIndicator">TEST MODE</div>
+                <div class="timer" id="timer">Time: --</div>
+                <div class="wisdom-display" id="wisdomDisplay">
+                    <h3>🎯 Wisdom to Share:</h3>
+                    <p id="currentWisdom">Click "Start Game" in test controls</p>
+                </div>
+            </div>
+
+            <!-- Storyteller Section -->
+            <div class="storyteller-section" id="storytellerSection" style="display: none;">
+                <h3>📜 Storyteller's Turn</h3>
+                <p style="margin: 10px 0;">Translate using ONLY one-syllable words!</p>
+                <textarea class="wisdom-input" id="storyInput" placeholder="Type your one-syllable translation..."></textarea>
+                <button class="btn btn-start" onclick="shareStory()">Share Wisdom</button>
+            </div>
+
+            <!-- Response Section -->
+            <div class="response-section" id="responseSection" style="display: none;">
+                <h3>👂 What Does It Mean?</h3>
+                <p id="storytellerStory" style="font-size: 1.3em; margin: 15px 0; font-weight: bold;"></p>
+                
+                <textarea class="guess-input" id="guessInput" placeholder="Type your guess..."></textarea>
+                <button class="btn btn-start" onclick="submitGuess()">OOH! I THINK THIS!</button>
+                
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-bonk" onclick="submitBonk()">BONK!</button>
+                </div>
+            </div>
+
+            <!-- Selection Section -->
+            <div class="storyteller-section" id="selectionSection" style="display: none;">
+                <h3>📜 Select Best Answer</h3>
+                <div id="responsesList"></div>
+                <button class="btn btn-start" onclick="passToNext()">Pass to Next</button>
+            </div>
+
+            <div class="cave-scene">
+                <div class="responses-display" id="responsesDisplay"></div>
+                <div class="fire-container">
+                    <div class="fire"></div>
+                </div>
+                <div class="players-container" id="playersContainer">
+                    <!-- Players render here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="game-over-screen hidden">
+            <img id="gameOverGraphic" class="game-over-graphic" alt="Game Over">
+            <h2 id="gameOverTitle">Game Over!</h2>
+            <p id="gameOverMessage"></p>
+            <br>
+            <button class="btn btn-start" onclick="location.reload()">Restart Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Audio system
+        const audioFiles = {
+            ooh: '/mnt/user-data/uploads/170780__esperar__oh_1.wav',
+            bonk: '/mnt/user-data/uploads/1761954650243_799276__sadiquecat__vocal-soft-thump.wav',
+            warning: '/mnt/user-data/uploads/clock-clock-sound-clock-clock-time-10343.mp3',
+            ambientForest: '/mnt/user-data/uploads/559389-szegvari-mystic-forest-am.mp3',
+            ambientFire: '/mnt/user-data/uploads/449048__countryroadfilms__fire-five.wav',
+            ambientWind: '/mnt/user-data/uploads/1761956629613_826994__gamexplosion__dark-ambient.wav',
+            loseFanfare: '/mnt/user-data/uploads/lose_fanfare.MP3',
+            winFanfare: '/mnt/user-data/uploads/win_fanfare.MP3',
+            storytellerShares: '/mnt/user-data/uploads/storyteller_shares.MP3',
+            threeBonksDead: '/mnt/user-data/uploads/3_bonks_dead.MP3'
+        };
+
+        const sounds = {};
+        const ambientLayers = [];
+        let soundEnabled = true;
+        
+        function preloadSounds() {
+            for (const [key, path] of Object.entries(audioFiles)) {
+                sounds[key] = new Audio(path);
+                sounds[key].preload = 'auto';
+                
+                if (key.startsWith('ambient')) {
+                    sounds[key].loop = true;
+                    ambientLayers.push(key);
+                    
+                    if (key === 'ambientForest') sounds[key].volume = 0.4;
+                    else if (key === 'ambientFire') sounds[key].volume = 0.5;
+                    else if (key === 'ambientWind') sounds[key].volume = 0.3;
+                }
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled || !sounds[type]) return;
+            const audio = sounds[type].cloneNode();
+            audio.volume = 0.6;
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+
+        function startAmbient() {
+            if (!soundEnabled) return;
+            ambientLayers.forEach(layer => {
+                if (sounds[layer]) sounds[layer].play().catch(e => {});
+            });
+        }
+
+        function stopAmbient() {
+            ambientLayers.forEach(layer => {
+                if (sounds[layer]) {
+                    sounds[layer].pause();
+                    sounds[layer].currentTime = 0;
+                }
+            });
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.querySelector('.sound-toggle').textContent = `🔊 Sound: ${soundEnabled ? 'ON' : 'OFF'}`;
+            if (!soundEnabled) stopAmbient();
+            else startAmbient();
+        }
+
+        preloadSounds();
+        document.addEventListener('click', () => startAmbient(), { once: true });
+
+        // Game state
+        let gameState = {
+            players: [],
+            currentStoryteller: 0,
+            currentWisdom: null,
+            currentStory: '',
+            responses: {},
+            phase: 'prep',
+            availableAvatars: ['caveman1.png', 'caveman2.png', 'caveman3.png', 'caveman4.png', 'caveman5.png']
+        };
+
+        const cavemanNames = ['Ogg', 'Trag', 'Gron', 'Brak', 'Urg', 'Zog', 'Thok', 'Krug', 'Mag', 'Drog'];
+        
+        const wisdomPool = [
+            "Cave managers model the safe cave-place behaviours they expect their workforce to follow",
+            "Workers have the right to stop work if they believe it is unsafe",
+            "Regular tribe meetings help identify and control hazards in the cave",
+            "Clear communication prevents accidents and injuries in the workplace",
+            "Proper lighting in caves reduces trips, slips and falls"
+        ];
+
+        // Test functions
+        function testStartGame() {
+            gameState.players = [
+                { name: 'Ogg', avatar: 'caveman1.png', bonkCount: 0, hasShared: false },
+                { name: 'Trag', avatar: 'caveman2.png', bonkCount: 0, hasShared: false },
+                { name: 'Gron', avatar: 'caveman3.png', bonkCount: 0, hasShared: false }
+            ];
+            gameState.currentStoryteller = 0;
+            gameState.currentWisdom = wisdomPool[Math.floor(Math.random() * wisdomPool.length)];
+            gameState.phase = 'prep';
+            gameState.responses = {};
+            gameState.currentStory = '';
+            updateUI();
+            alert('Game started! You control player Ogg (the storyteller)');
+        }
+
+        function testAddPlayer() {
+            if (gameState.players.length >= 5) {
+                alert('Maximum 5 players!');
+                return;
+            }
+            const newAvatar = gameState.availableAvatars[gameState.players.length % 5];
+            gameState.players.push({
+                name: cavemanNames[gameState.players.length],
+                avatar: newAvatar,
+                bonkCount: 0,
+                hasShared: false
+            });
+            updateUI();
+        }
+
+        function testBonkStoryteller() {
+            gameState.players[gameState.currentStoryteller].bonkCount = 3;
+            playSound('threeBonksDead');
+            alert('Storyteller bonked out!');
+            setTimeout(() => {
+                gameState.currentStoryteller = (gameState.currentStoryteller + 1) % gameState.players.length;
+                gameState.phase = 'prep';
+                gameState.responses = {};
+                gameState.currentStory = '';
+                updateUI();
+            }, 2000);
+        }
+
+        function testAutoGuess() {
+            const guess = "Boss show safe. Team do safe.";
+            gameState.responses['test1'] = { type: 'guess', text: guess, playerName: 'Trag' };
+            gameState.responses['test2'] = { type: 'guess', text: "Lead show way. All do too.", playerName: 'Gron' };
+            updateUI();
+        }
+
+        function testAutoBonk() {
+            gameState.responses['test1'] = { type: 'bonk', text: 'BONK!', playerName: 'Trag' };
+            gameState.responses['test2'] = { type: 'bonk', text: 'BONK! UGH TOO HARD!', playerName: 'Gron' };
+            playSound('bonk');
+            playSound('bonk');
+            updateUI();
+        }
+
+        function testWinGame() {
+            stopAmbient();
+            playSound('winFanfare');
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+            document.getElementById('gameOverScreen').classList.add('enlightenment');
+            document.getElementById('gameOverGraphic').src = 'win-graphic.png';
+            document.getElementById('gameOverTitle').textContent = '✨ AGE OF ENLIGHTENMENT ACHIEVED! ✨';
+            document.getElementById('gameOverMessage').textContent = 'Your tribe evolved to the modern age!';
+        }
+
+        function testLoseGame() {
+            stopAmbient();
+            playSound('loseFanfare');
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+            document.getElementById('gameOverGraphic').src = 'lose-graphic.png';
+            document.getElementById('gameOverTitle').textContent = '💀 TRIBE DEFEATED 💀';
+            document.getElementById('gameOverMessage').textContent = 'All storytellers bonked out!';
+        }
+
+        function testPlayAllSounds() {
+            const soundOrder = ['ooh', 'bonk', 'warning', 'storytellerShares', 'threeBonksDead', 'winFanfare', 'loseFanfare'];
+            let index = 0;
+            const interval = setInterval(() => {
+                if (index >= soundOrder.length) {
+                    clearInterval(interval);
+                    return;
+                }
+                console.log('Playing:', soundOrder[index]);
+                playSound(soundOrder[index]);
+                index++;
+            }, 2000);
+        }
+
+        // Game functions
+        function shareStory() {
+            const story = document.getElementById('storyInput').value.trim();
+            if (!story) {
+                alert('Type your wisdom first!');
+                return;
+            }
+            gameState.currentStory = story;
+            gameState.phase = 'guessing';
+            gameState.responses = {};
+            playSound('storytellerShares');
+            updateUI();
+        }
+
+        function submitGuess() {
+            const guess = document.getElementById('guessInput').value.trim();
+            if (!guess) {
+                alert('Type your guess first!');
+                return;
+            }
+            gameState.responses['player1'] = { type: 'guess', text: guess, playerName: 'Trag' };
+            playSound('ooh');
+            gameState.phase = 'selection';
+            updateUI();
+        }
+
+        function submitBonk() {
+            gameState.responses['player1'] = { type: 'bonk', text: 'BONK!', playerName: 'Trag' };
+            playSound('bonk');
+            alert('BONKed! Try explaining differently.');
+            gameState.phase = 'prep';
+            gameState.currentStory = '';
+            gameState.responses = {};
+            updateUI();
+        }
+
+        function selectResponse(id) {
+            gameState.players[gameState.currentStoryteller].hasShared = true;
+            alert('Correct answer selected!');
+            
+            const allShared = gameState.players.every(p => p.hasShared);
+            if (allShared) {
+                testWinGame();
+            } else {
+                gameState.currentStoryteller = (gameState.currentStoryteller + 1) % gameState.players.length;
+                gameState.phase = 'prep';
+                gameState.responses = {};
+                gameState.currentStory = '';
+                gameState.currentWisdom = wisdomPool[Math.floor(Math.random() * wisdomPool.length)];
+                updateUI();
+            }
+        }
+
+        function passToNext() {
+            gameState.currentStoryteller = (gameState.currentStoryteller + 1) % gameState.players.length;
+            gameState.phase = 'prep';
+            gameState.responses = {};
+            gameState.currentStory = '';
+            updateUI();
+        }
+
+        function updateUI() {
+            // Update wisdom
+            document.getElementById('currentWisdom').textContent = gameState.currentWisdom || 'Start a game first';
+            
+            // Update phase
+            const phases = { prep: 'PREPARATION PHASE', guessing: 'GUESSING PHASE', selection: 'SELECTION PHASE' };
+            document.getElementById('phaseIndicator').textContent = phases[gameState.phase] || 'TEST MODE';
+            
+            // Show/hide sections
+            const isStoryteller = true; // In test mode, you control everything
+            document.getElementById('storytellerSection').style.display = 
+                (gameState.phase === 'prep' && gameState.players.length > 0) ? 'block' : 'none';
+            document.getElementById('responseSection').style.display = 
+                (gameState.phase === 'guessing') ? 'block' : 'none';
+            document.getElementById('selectionSection').style.display = 
+                (gameState.phase === 'selection') ? 'block' : 'none';
+            
+            // Update storyteller display
+            if (gameState.phase === 'guessing') {
+                document.getElementById('storytellerStory').textContent = `"${gameState.currentStory}"`;
+            }
+            
+            // Update selection section
+            if (gameState.phase === 'selection') {
+                const guesses = Object.entries(gameState.responses)
+                    .filter(([id, r]) => r.type === 'guess')
+                    .map(([id, r]) => ({ id, ...r }));
+                
+                document.getElementById('responsesList').innerHTML = guesses.map(g => `
+                    <div class="response-card" onclick="selectResponse('${g.id}')">
+                        <strong>${g.playerName}:</strong> ${g.text}
+                    </div>
+                `).join('');
+            }
+            
+            // Update floating responses
+            const responsesDisplay = document.getElementById('responsesDisplay');
+            if (gameState.phase === 'guessing' || gameState.phase === 'selection') {
+                const responses = Object.values(gameState.responses);
+                responsesDisplay.innerHTML = responses.map(r => `
+                    <div class="response-bubble">
+                        <strong>${r.playerName}:</strong> ${r.text}
+                    </div>
+                `).join('');
+            } else {
+                responsesDisplay.innerHTML = '';
+            }
+            
+            // Render players
+            renderPlayers();
+        }
+
+        function renderPlayers() {
+            const container = document.getElementById('playersContainer');
+            container.innerHTML = gameState.players.map((player, index) => {
+                const isStoryteller = index === gameState.currentStoryteller;
+                const isTalking = isStoryteller && gameState.phase === 'guessing';
+                
+                let classes = 'player';
+                if (isStoryteller) classes += ' storyteller';
+                if (isTalking) classes += ' talking';
+                
+                return `
+                    <div class="${classes}">
+                        <div class="player-avatar">
+                            <img src="${player.avatar}" alt="${player.name}">
+                        </div>
+                        <div class="player-name">${player.name}</div>
+                        <div class="bonk-counter">💀 Bonks: ${player.bonkCount}/3</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Initial render
+        updateUI();
+    </script>
+</body>
+</html>

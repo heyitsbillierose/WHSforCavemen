@@ -1,0 +1,15 @@
+⚠️ WIN/LOSE GRAPHICS NEEDED
+
+The game is looking for these two images:
+- win-graphic.jpg (the image with cavemen evolved to office workers)
+- lose-graphic.jpg (the image with cavemen stuck in stone age)
+
+Please add these images to the CavemanGame folder.
+
+If you have them in a different format (.png), you can either:
+1. Rename them to .jpg
+2. OR update the HTML files to look for .png instead
+
+The images should show:
+- WIN: Cavemen transformed into modern office workers (evolution success)
+- LOSE: Cavemen still in primitive state (evolution failed)

@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cave-place Health and Safety Communication Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(to bottom, #2c1810, #1a0f08);
+            color: #f4e4c1;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            max-width: 300px;
+            height: auto;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .lobby-screen {
+            background: rgba(0,0,0,0.9);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 4px solid #8b4513;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .lobby-screen input, .lobby-screen select {
+            padding: 12px;
+            font-size: 1.2em;
+            border-radius: 8px;
+            border: 2px solid #8b4513;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 400px;
+            background: rgba(244, 228, 193, 0.9);
+        }
+
+        .room-code {
+            font-size: 2em;
+            color: #ff6b35;
+            background: rgba(139, 69, 19, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            letter-spacing: 3px;
+            font-weight: bold;
+        }
+
+        .player-list {
+            background: rgba(139, 69, 19, 0.4);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .player-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(0,0,0,0.3);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .player-item .avatar {
+            width: 50px;
+            height: 50px;
+        }
+
+        .game-status {
+            background: rgba(0,0,0,0.6);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 3px solid #8b4513;
+        }
+
+        .timer {
+            font-size: 2.5em;
+            color: #ff6b35;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .timer.warning {
+            color: #ff0000;
+            animation: pulse 0.5s infinite;
+        }
+
+        .timer.prep {
+            color: #ffa500;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .phase-indicator {
+            text-align: center;
+            font-size: 1.5em;
+            color: #ffa500;
+            margin: 10px 0;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .wisdom-display {
+            background: rgba(139, 69, 19, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 2px solid #d2691e;
+        }
+
+        .wisdom-display h3 {
+            color: #ffa500;
+            margin-bottom: 10px;
+        }
+
+        .cave-scene {
+            position: relative;
+            min-height: 500px;
+            background: url('cave-wall.png') center center no-repeat;
+            background-size: cover;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .cave-scene::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: url('cave-floor.png') center bottom no-repeat;
+            background-size: cover;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .fire-container {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .fire {
+            width: 100%;
+            height: 100%;
+            background: url('fire-animation.gif') center center no-repeat;
+            background-size: contain;
+        }
+
+        .responses-display {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 600px;
+            z-index: 4;
+        }
+
+        .response-bubble {
+            background: rgba(244, 228, 193, 0.95);
+            color: #4a2511;
+            padding: 12px 20px;
+            border-radius: 15px;
+            margin: 8px 0;
+            border: 2px solid #8b4513;
+            animation: floatIn 0.5s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        @keyframes floatIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .players-container {
+            position: relative;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            min-height: 350px;
+            padding: 20px;
+            flex-wrap: wrap;
+            z-index: 3;
+        }
+
+        .player {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .player.storyteller {
+            transform: scale(1.3);
+        }
+
+        .player.storyteller::before {
+            content: '🔥 STORYTELLER 🔥';
+            position: absolute;
+            top: -40px;
+            font-size: 0.8em;
+            color: #ff6b35;
+            font-weight: bold;
+            animation: glow 1s infinite alternate;
+            white-space: nowrap;
+        }
+
+        .player.you::after {
+            content: '(YOU)';
+            position: absolute;
+            bottom: -25px;
+            font-size: 0.7em;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #ff6b35; }
+            to { text-shadow: 0 0 20px #ff6b35, 0 0 30px #ff4500; }
+        }
+
+        .player-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(139, 69, 19, 0.3);
+            border: 4px solid #d2691e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .player-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .player.talking .player-avatar {
+            animation: jiggle 0.2s infinite;
+        }
+
+        .player.bonked .player-avatar {
+            animation: bonkShake 0.5s ease;
+        }
+
+        @keyframes jiggle {
+            0%, 100% { transform: rotate(-2deg) translateY(-2px); }
+            50% { transform: rotate(2deg) translateY(2px); }
+        }
+
+        @keyframes bonkShake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            75% { transform: rotate(15deg); }
+        }
+
+        .response-indicator {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 1.5em;
+            background: white;
+            border-radius: 50%;
+            padding: 5px;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .player-name {
+            font-weight: bold;
+            color: #ffa500;
+            margin-bottom: 5px;
+        }
+
+        .bonk-counter {
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.3em;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: 'Comic Sans MS', cursive;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.4);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-bonk {
+            background: linear-gradient(135deg, #f44336, #da190b);
+            color: white;
+            font-size: 1.1em;
+            padding: 12px 25px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #ff6b35, #ff4500);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #8b4513, #654321);
+            color: white;
+            font-size: 1.2em;
+            padding: 12px 30px;
+        }
+
+        .btn-ready {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            font-size: 1.5em;
+            padding: 20px 50px;
+        }
+
+        .storyteller-section {
+            background: rgba(139, 69, 19, 0.6);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 3px solid #d2691e;
+        }
+
+        .response-section {
+            background: rgba(76, 175, 80, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 3px solid #4CAF50;
+        }
+
+        .wisdom-input, .guess-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            border-radius: 10px;
+            border: 3px solid #8b4513;
+            margin: 15px 0;
+            background: rgba(244, 228, 193, 0.9);
+            font-family: 'Comic Sans MS', cursive;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .instructions {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(139, 69, 19, 0.8);
+            border: 2px solid #d2691e;
+            border-radius: 10px;
+            cursor: pointer;
+            color: #f4e4c1;
+            font-size: 1.2em;
+            z-index: 1000;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .game-over-screen {
+            background: rgba(0,0,0,0.9);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 4px solid #8b4513;
+        }
+
+        .enlightenment {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #8b4513;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 1.5em;
+            animation: enlighten 2s infinite alternate;
+        }
+
+        @keyframes enlighten {
+            from { box-shadow: 0 0 20px #ffd700; }
+            to { box-shadow: 0 0 40px #ffd700, 0 0 60px #ffed4e; }
+        }
+
+        .alert-box {
+            background: rgba(255, 107, 53, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 3px solid #ff4500;
+            font-size: 1.2em;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .bonk-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .guess-submission {
+            margin: 20px 0;
+        }
+
+        .response-card {
+            background: rgba(244, 228, 193, 0.9);
+            color: #4a2511;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 2px solid #8b4513;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .response-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .response-card.selected {
+            border: 4px solid #4CAF50;
+            background: rgba(76, 175, 80, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="sound-toggle" onclick="toggleSound()">🔊 Sound: ON</div>
+    
+    <div class="game-container">
+        <div class="header">
+            <img src="game-logo.png" alt="Cave-place Health and Safety" class="logo">
+        </div>
+
+        <!-- Lobby Screen -->
+        <div id="lobbyScreen" class="lobby-screen">
+            <h2>Join the Tribe!</h2>
+            
+            <div id="createRoomSection">
+                <p>Create a new game room:</p>
+                <button class="btn btn-start" onclick="createRoom()">Create New Game</button>
+                <p style="margin: 20px 0;">- OR -</p>
+            </div>
+
+            <div id="joinRoomSection">
+                <p>Join an existing game:</p>
+                <input type="text" id="roomCodeInput" placeholder="Enter Room Code" maxlength="6" style="text-transform: uppercase;">
+                <br>
+                <button class="btn btn-secondary" onclick="joinRoom()">Join Game</button>
+            </div>
+
+            <div class="instructions">
+                <h3>How to Play:</h3>
+                <p>🗣️ Storyteller gets 30 seconds to translate wisdom into one-syllable words</p>
+                <p>👂 Tribe gets 60 seconds to guess the meaning</p>
+                <p>✍️ Type your guess or BONK if you don't understand</p>
+                <p>❌ 3 BONKs and the storyteller is out!</p>
+                <p>✨ Win when all tribe members successfully share their wisdom</p>
+            </div>
+        </div>
+
+        <!-- Waiting Room -->
+        <div id="waitingRoom" class="lobby-screen hidden">
+            <h2>Waiting for Players...</h2>
+            <div class="room-code" id="displayRoomCode"></div>
+            <p>Share this code with your tribe members!</p>
+            
+            <div class="player-list" id="playerListWaiting">
+                <h3>Players in Lobby:</h3>
+                <div id="waitingPlayersList"></div>
+            </div>
+
+            <p style="margin: 20px 0;">Minimum 2 players needed to start</p>
+            <button class="btn btn-start" id="startGameBtn" onclick="startGame()" disabled>Start Game</button>
+            <button class="btn btn-secondary" onclick="leaveRoom()">Leave Room</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="hidden">
+            <div class="game-status">
+                <div class="phase-indicator" id="phaseIndicator">PREPARATION PHASE</div>
+                <div class="timer" id="timer">Time: 30s</div>
+                <div class="wisdom-display" id="wisdomDisplay">
+                    <h3>🎯 Wisdom to Share:</h3>
+                    <p id="currentWisdom">Loading wisdom...</p>
+                </div>
+            </div>
+
+            <div id="alertBox" style="display: none;"></div>
+
+            <!-- Storyteller Prep Section -->
+            <div class="storyteller-section" id="storytellerSection" style="display: none;">
+                <h3>📜 Your Turn as Storyteller!</h3>
+                <p style="margin: 10px 0;">Translate the wisdom above using ONLY one-syllable words!</p>
+                <textarea class="wisdom-input" id="storyInput" placeholder="Type your one-syllable translation here..." maxlength="500"></textarea>
+                <button class="btn btn-start" onclick="shareStory()" id="shareBtn">Share Wisdom</button>
+            </div>
+
+            <!-- Tribe Response Section -->
+            <div class="response-section" id="responseSection" style="display: none;">
+                <h3>👂 What Does the Storyteller Mean?</h3>
+                <p id="storytellerStory" style="font-size: 1.3em; margin: 15px 0; font-weight: bold;"></p>
+                
+                <div class="guess-submission">
+                    <textarea class="guess-input" id="guessInput" placeholder="Type what you think it means..."></textarea>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                        <button class="btn btn-start" onclick="submitGuess('understand')">OOH! <span id="playerNameOoh">ME</span> THINK THIS!</button>
+                        <button class="btn btn-start" onclick="submitGuess('understand2')">OOH! MEAN THIS?</button>
+                    </div>
+                </div>
+
+                <div class="bonk-buttons">
+                    <button class="btn btn-bonk" onclick="submitBonk('bonk1')">BONK!</button>
+                    <button class="btn btn-bonk" onclick="submitBonk('bonk2')">BONK! UGH TOO HARD!</button>
+                    <button class="btn btn-bonk" onclick="submitBonk('bonk3')">😱 <span id="playerNameScared">NAME</span> SCARED NEW WORDS BONK!</button>
+                    <button class="btn btn-bonk" onclick="submitBonk('bonk4')">BONK! <span id="playerNameNoLike">NAME</span> NO LIKE!</button>
+                </div>
+            </div>
+
+            <!-- Storyteller Selection Section -->
+            <div class="storyteller-section" id="selectionSection" style="display: none;">
+                <h3>📜 Select the Best Answer</h3>
+                <p>Click the response that matches closest to the original wisdom, or pass if none are correct:</p>
+                <div id="responsesList"></div>
+                <button class="btn btn-secondary" onclick="passToNext()">No Correct Answers - Pass to Next</button>
+            </div>
+
+            <!-- Ready Button Section -->
+            <div id="readySection" style="display: none; text-align: center; margin: 30px 0;">
+                <h2 style="margin-bottom: 20px;">Ready for your turn?</h2>
+                <button class="btn btn-ready" onclick="startMyTurn()">READY!</button>
+            </div>
+
+            <div class="cave-scene">
+                <div class="responses-display" id="responsesDisplay"></div>
+                <div class="fire-container">
+                    <div class="fire"></div>
+                </div>
+                <div class="players-container" id="playersContainer">
+                    <!-- Players will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="game-over-screen hidden">
+            <h2 id="gameOverTitle">Game Over!</h2>
+            <p id="gameOverMessage"></p>
+            <br>
+            <button class="btn btn-start" onclick="returnToLobby()">Return to Lobby</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // AUDIO SYSTEM
+        // ============================================
+        
+        const audioFiles = {
+            ooh: 'audio/ooh.wav',
+            bonk: 'audio/bonk.wav',
+            warning: 'audio/warning.mp3',
+            ambientForest: 'audio/ambient-forest.mp3',
+            ambientFire: 'audio/ambient-fire.wav',
+            ambientWind: 'audio/ambient-wind.wav',
+            loseFanfare: 'audio/lose_fanfare.mp3',
+            winFanfare: 'audio/win_fanfare.mp3',
+            storytellerShares: 'audio/storyteller_shares.mp3',
+            threeBonksDead: 'audio/3_bonks_dead.mp3'
+        };
+
+        const sounds = {};
+        const ambientLayers = [];
+        
+        function preloadSounds() {
+            for (const [key, path] of Object.entries(audioFiles)) {
+                sounds[key] = new Audio(path);
+                sounds[key].preload = 'auto';
+                
+                if (key.startsWith('ambient')) {
+                    sounds[key].loop = true;
+                    ambientLayers.push(key);
+                    
+                    if (key === 'ambientForest') {
+                        sounds[key].volume = 0.4;
+                    } else if (key === 'ambientFire') {
+                        sounds[key].volume = 0.5;
+                    } else if (key === 'ambientWind') {
+                        sounds[key].volume = 0.3;
+                    }
+                }
+            }
+        }
+
+        function playSound(type) {
+            if (!gameState.soundEnabled) return;
+            
+            if (sounds[type]) {
+                const audio = sounds[type].cloneNode();
+                audio.volume = 0.6;
+                audio.play().catch(e => console.log('Audio play failed:', e));
+            }
+        }
+
+        function startAmbientSound() {
+            if (!gameState.soundEnabled) return;
+            
+            ambientLayers.forEach(layer => {
+                if (sounds[layer]) {
+                    sounds[layer].play().catch(e => console.log('Ambient sound play failed:', e));
+                }
+            });
+        }
+
+        function stopAmbientSound() {
+            ambientLayers.forEach(layer => {
+                if (sounds[layer]) {
+                    sounds[layer].pause();
+                    sounds[layer].currentTime = 0;
+                }
+            });
+        }
+
+        preloadSounds();
+
+        let ambientStarted = false;
+        
+        function initAmbientOnInteraction() {
+            if (!ambientStarted && gameState.soundEnabled) {
+                startAmbientSound();
+                ambientStarted = true;
+            }
+        }
+
+        document.addEventListener('click', initAmbientOnInteraction, { once: false });
+        document.addEventListener('keypress', initAmbientOnInteraction, { once: false });
+
+        // ============================================
+        // GAME STATE
+        // ============================================
+        
+        let gameState = {
+            roomCode: null,
+            myPlayerId: null,
+            players: [],
+            currentStoryteller: 0,
+            currentWisdom: null,
+            timeRemaining: 30,
+            timerInterval: null,
+            soundEnabled: true,
+            responses: {},
+            currentStory: '',
+            gameStarted: false,
+            syncInterval: null,
+            phase: 'prep', // 'prep', 'guessing', 'selection', 'ready'
+            availableAvatars: ['caveman1.png', 'caveman2.png', 'caveman3.png', 'caveman4.png', 'caveman5.png']
+        };
+
+        // Caveman names pool
+        const cavemanNames = [
+            'Ogg', 'Trag', 'Gron', 'Brak', 'Urg', 'Zog', 'Thok', 'Krug',
+            'Mag', 'Drog', 'Bok', 'Grak', 'Thunk', 'Grog', 'Ugg', 'Rok',
+            'Zug', 'Nog', 'Tunk', 'Brog'
+        ];
+
+        // Workplace Safety Wisdoms
+        const wisdomPool = [
+            "Cave managers model the safe cave-place behaviours they expect their workforce to follow",
+            "Workers have the right to stop work if they believe it is unsafe",
+            "Regular tribe meetings help identify and control hazards in the cave",
+            "Clear communication prevents accidents and injuries in the workplace",
+            "Proper lighting in caves reduces trips, slips and falls",
+            "Heavy rocks must be lifted with proper technique to prevent back injury",
+            "Fire safety equipment must be easily accessible to all tribe members",
+            "Regular breaks prevent fatigue and improve cave productivity",
+            "All tribe members must report hazards immediately to cave leaders",
+            "Ergonomic cave workstations prevent repetitive strain injuries",
+            "Bullying and harassment have no place in our tribe",
+            "Mental health is as important as physical safety in the cave",
+            "Emergency exits must be clearly marked and never blocked",
+            "Personal protective equipment must be worn when handling sharp tools",
+            "New tribe members must receive proper safety training before starting work",
+            "Stress and workload must be managed to prevent burnout in the tribe",
+            "All tribe members deserve respect and dignity in the workplace",
+            "Clear procedures prevent confusion and dangerous mistakes",
+            "Proper ventilation keeps cave air safe and breathable for all"
+        ];
+
+        const STORAGE_PREFIX = 'caveman_game_';
+        
+        function generateRoomCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        function generatePlayerId() {
+            return 'player_' + Math.random().toString(36).substring(2, 11);
+        }
+
+        function getAvailableName() {
+            const usedNames = gameState.players.map(p => p.name);
+            const available = cavemanNames.filter(name => !usedNames.includes(name));
+            return available[Math.floor(Math.random() * available.length)] || 'Cave' + Math.floor(Math.random() * 100);
+        }
+
+        function getAvailableAvatar() {
+            const usedAvatars = gameState.players.map(p => p.avatar);
+            const available = gameState.availableAvatars.filter(avatar => !usedAvatars.includes(avatar));
+            return available[Math.floor(Math.random() * available.length)] || gameState.availableAvatars[0];
+        }
+
+        function saveGameState() {
+            if (!gameState.roomCode) return;
+            localStorage.setItem(STORAGE_PREFIX + gameState.roomCode, JSON.stringify({
+                players: gameState.players,
+                currentStoryteller: gameState.currentStoryteller,
+                currentWisdom: gameState.currentWisdom,
+                responses: gameState.responses,
+                currentStory: gameState.currentStory,
+                gameStarted: gameState.gameStarted,
+                timeRemaining: gameState.timeRemaining,
+                phase: gameState.phase,
+                timestamp: Date.now()
+            }));
+        }
+
+        function loadGameState() {
+            if (!gameState.roomCode) return false;
+            const saved = localStorage.getItem(STORAGE_PREFIX + gameState.roomCode);
+            if (!saved) return false;
+            
+            const data = JSON.parse(saved);
+            gameState.players = data.players || [];
+            gameState.currentStoryteller = data.currentStoryteller || 0;
+            gameState.currentWisdom = data.currentWisdom;
+            gameState.responses = data.responses || {};
+            gameState.currentStory = data.currentStory || '';
+            gameState.gameStarted = data.gameStarted || false;
+            gameState.timeRemaining = data.timeRemaining || 30;
+            gameState.phase = data.phase || 'prep';
+            
+            return true;
+        }
+
+        function syncGameState() {
+            if (!gameState.roomCode) return;
+            loadGameState();
+            updateUI();
+        }
+
+        function createRoom() {
+            gameState.roomCode = generateRoomCode();
+            gameState.myPlayerId = generatePlayerId();
+            
+            const newPlayer = {
+                id: gameState.myPlayerId,
+                name: getAvailableName(),
+                avatar: getAvailableAvatar(),
+                bonkCount: 0,
+                hasShared: false,
+                isHost: true
+            };
+            
+            gameState.players = [newPlayer];
+            saveGameState();
+            
+            showWaitingRoom();
+            startSyncInterval();
+        }
+
+        function joinRoom() {
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            if (!code || code.length !== 6) {
+                showAlert('Please enter a valid 6-character room code');
+                return;
+            }
+
+            gameState.roomCode = code;
+            
+            if (!loadGameState()) {
+                showAlert('Room not found! Please check the code.');
+                gameState.roomCode = null;
+                return;
+            }
+
+            gameState.myPlayerId = generatePlayerId();
+            const newPlayer = {
+                id: gameState.myPlayerId,
+                name: getAvailableName(),
+                avatar: getAvailableAvatar(),
+                bonkCount: 0,
+                hasShared: false,
+                isHost: false
+            };
+            
+            gameState.players.push(newPlayer);
+            saveGameState();
+            
+            showWaitingRoom();
+            startSyncInterval();
+        }
+
+        function leaveRoom() {
+            if (gameState.roomCode) {
+                gameState.players = gameState.players.filter(p => p.id !== gameState.myPlayerId);
+                
+                if (gameState.players.length === 0) {
+                    localStorage.removeItem(STORAGE_PREFIX + gameState.roomCode);
+                } else {
+                    if (gameState.players.every(p => !p.isHost)) {
+                        gameState.players[0].isHost = true;
+                    }
+                    saveGameState();
+                }
+            }
+            
+            stopSyncInterval();
+            stopAmbientSound();
+            returnToLobby();
+        }
+
+        function startSyncInterval() {
+            stopSyncInterval();
+            gameState.syncInterval = setInterval(syncGameState, 1000);
+        }
+
+        function stopSyncInterval() {
+            if (gameState.syncInterval) {
+                clearInterval(gameState.syncInterval);
+                gameState.syncInterval = null;
+            }
+        }
+
+        function showWaitingRoom() {
+            document.getElementById('lobbyScreen').classList.add('hidden');
+            document.getElementById('waitingRoom').classList.remove('hidden');
+            document.getElementById('displayRoomCode').textContent = gameState.roomCode;
+            updateWaitingRoom();
+        }
+
+        function updateWaitingRoom() {
+            const list = document.getElementById('waitingPlayersList');
+            list.innerHTML = gameState.players.map((p, i) => `
+                <div class="player-item">
+                    <img src="${p.avatar}" class="avatar" alt="${p.name}">
+                    <strong>${p.name}</strong>
+                    ${p.id === gameState.myPlayerId ? '(You)' : ''}
+                    ${p.isHost ? '👑' : ''}
+                </div>
+            `).join('');
+
+            const startBtn = document.getElementById('startGameBtn');
+            const isHost = gameState.players.find(p => p.id === gameState.myPlayerId)?.isHost;
+            startBtn.disabled = gameState.players.length < 2 || !isHost;
+            startBtn.textContent = isHost ? 'Start Game' : 'Waiting for host to start...';
+        }
+
+        function startGame() {
+            if (gameState.players.length < 2) {
+                showAlert('Need at least 2 players to start!');
+                return;
+            }
+
+            gameState.gameStarted = true;
+            gameState.currentWisdom = wisdomPool[Math.floor(Math.random() * wisdomPool.length)];
+            gameState.currentStoryteller = 0;
+            gameState.responses = {};
+            gameState.currentStory = '';
+            gameState.timeRemaining = 30;
+            gameState.phase = 'ready';
+            
+            saveGameState();
+            
+            document.getElementById('waitingRoom').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            if (!gameState.gameStarted) {
+                updateWaitingRoom();
+                return;
+            }
+
+            const storyteller = gameState.players[gameState.currentStoryteller];
+            const isMyTurn = storyteller?.id === gameState.myPlayerId;
+
+            // Update phase indicator and timer
+            const phaseText = {
+                'prep': 'PREPARATION PHASE',
+                'guessing': 'GUESSING PHASE',
+                'selection': 'STORYTELLER SELECTION',
+                'ready': 'READY PHASE'
+            };
+            document.getElementById('phaseIndicator').textContent = phaseText[gameState.phase];
+            document.getElementById('timer').textContent = `Time: ${gameState.timeRemaining}s`;
+            
+            const timerEl = document.getElementById('timer');
+            timerEl.className = 'timer';
+            if (gameState.phase === 'prep') timerEl.classList.add('prep');
+            if (gameState.timeRemaining <= 10) timerEl.classList.add('warning');
+
+            // Update wisdom display
+            if (gameState.phase === 'prep' && isMyTurn) {
+                document.getElementById('wisdomDisplay').style.display = 'block';
+                document.getElementById('currentWisdom').textContent = gameState.currentWisdom;
+            } else if (gameState.phase === 'prep' && !isMyTurn) {
+                document.getElementById('wisdomDisplay').style.display = 'block';
+                document.getElementById('currentWisdom').textContent = 'Waiting for storyteller to prepare...';
+            } else {
+                document.getElementById('wisdomDisplay').style.display = 'none';
+            }
+
+            // Show/hide sections based on phase and role
+            document.getElementById('storytellerSection').style.display = 
+                (gameState.phase === 'prep' && isMyTurn) ? 'block' : 'none';
+            
+            document.getElementById('responseSection').style.display = 
+                (gameState.phase === 'guessing' && !isMyTurn && !gameState.responses[gameState.myPlayerId]) ? 'block' : 'none';
+            
+            document.getElementById('selectionSection').style.display = 
+                (gameState.phase === 'selection' && isMyTurn) ? 'block' : 'none';
+            
+            document.getElementById('readySection').style.display = 
+                (gameState.phase === 'ready' && isMyTurn) ? 'block' : 'none';
+
+            // Update player names in buttons
+            const myPlayer = gameState.players.find(p => p.id === gameState.myPlayerId);
+            if (myPlayer) {
+                document.getElementById('playerNameOoh').textContent = myPlayer.name;
+                document.getElementById('playerNameScared').textContent = myPlayer.name;
+                document.getElementById('playerNameNoLike').textContent = myPlayer.name;
+            }
+
+            // Update storyteller's story display
+            if (gameState.currentStory && gameState.phase === 'guessing') {
+                document.getElementById('storytellerStory').textContent = `"${gameState.currentStory}"`;
+            }
+
+            // Update selection section
+            if (gameState.phase === 'selection' && isMyTurn) {
+                updateSelectionSection();
+            }
+
+            // Update floating responses
+            updateFloatingResponses();
+
+            // Render players
+            renderPlayers();
+        }
+
+        function renderPlayers() {
+            const container = document.getElementById('playersContainer');
+            container.innerHTML = gameState.players.map((player, index) => {
+                const isStoryteller = index === gameState.currentStoryteller;
+                const isMe = player.id === gameState.myPlayerId;
+                const response = gameState.responses[player.id];
+                const isTalking = isStoryteller && gameState.phase === 'guessing';
+                
+                let classes = 'player';
+                if (isStoryteller) classes += ' storyteller';
+                if (isMe) classes += ' you';
+                if (isTalking) classes += ' talking';
+                
+                const responseIcon = response ? '✓' : '';
+                
+                return `
+                    <div class="${classes}">
+                        <div class="player-avatar">
+                            <img src="${player.avatar}" alt="${player.name}">
+                            ${responseIcon ? `<div class="response-indicator">${responseIcon}</div>` : ''}
+                        </div>
+                        <div class="player-name">${player.name}</div>
+                        <div class="bonk-counter">💀 Bonks: ${player.bonkCount}/3</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function startMyTurn() {
+            gameState.phase = 'prep';
+            gameState.timeRemaining = 30;
+            gameState.responses = {};
+            gameState.currentStory = '';
+            saveGameState();
+            startTimer();
+        }
+
+        function shareStory() {
+            const story = document.getElementById('storyInput').value.trim();
+            
+            if (!story) {
+                showAlert('Please type your wisdom first!');
+                return;
+            }
+
+            gameState.currentStory = story;
+            gameState.phase = 'guessing';
+            gameState.timeRemaining = 60;
+            gameState.responses = {};
+            
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            
+            saveGameState();
+            
+            playSound('storytellerShares');
+            
+            startTimer();
+            updateUI();
+        }
+
+        function submitGuess(buttonType) {
+            const guess = document.getElementById('guessInput').value.trim();
+            
+            if (!guess) {
+                showAlert('Please type your guess first!');
+                return;
+            }
+
+            gameState.responses[gameState.myPlayerId] = {
+                type: 'guess',
+                text: guess,
+                playerName: gameState.players.find(p => p.id === gameState.myPlayerId).name
+            };
+            
+            playSound('ooh');
+            saveGameState();
+            checkAllResponded();
+        }
+
+        function submitBonk(buttonType) {
+            const bonkMessages = {
+                'bonk1': 'BONK!',
+                'bonk2': 'BONK! UGH TOO HARD!',
+                'bonk3': `😱 ${gameState.players.find(p => p.id === gameState.myPlayerId).name} SCARED NEW WORDS BONK!`,
+                'bonk4': `BONK! ${gameState.players.find(p => p.id === gameState.myPlayerId).name} NO LIKE!`
+            };
+
+            gameState.responses[gameState.myPlayerId] = {
+                type: 'bonk',
+                text: bonkMessages[buttonType],
+                playerName: gameState.players.find(p => p.id === gameState.myPlayerId).name
+            };
+            
+            playSound('bonk');
+            saveGameState();
+            checkAllResponded();
+        }
+
+        function checkAllResponded() {
+            const expectedResponses = gameState.players.length - 1;
+            if (Object.keys(gameState.responses).length >= expectedResponses) {
+                if (gameState.timerInterval) {
+                    clearInterval(gameState.timerInterval);
+                }
+                evaluateResponses();
+            }
+        }
+
+        function evaluateResponses() {
+            const bonkCount = Object.values(gameState.responses).filter(r => r.type === 'bonk').length;
+            
+            if (bonkCount >= 3) {
+                storytellerBonkedOut();
+            } else if (bonkCount > 0) {
+                // Play bonk sounds one at a time
+                let bonksSoFar = 0;
+                const bonkInterval = setInterval(() => {
+                    playSound('bonk');
+                    bonksSoFar++;
+                    
+                    // Trigger bonked animation on storyteller
+                    const storytellerEl = document.querySelector('.player.storyteller');
+                    if (storytellerEl) {
+                        storytellerEl.classList.add('bonked');
+                        setTimeout(() => storytellerEl.classList.remove('bonked'), 500);
+                    }
+                    
+                    if (bonksSoFar >= bonkCount) {
+                        clearInterval(bonkInterval);
+                        
+                        showAlert(`${bonkCount} BONK${bonkCount > 1 ? 'S' : ''}! Storyteller must try again!`, 3000);
+                        
+                        // Reset for retry
+                        gameState.phase = 'prep';
+                        gameState.currentStory = '';
+                        gameState.responses = {};
+                        gameState.timeRemaining = 30;
+                        saveGameState();
+                        
+                        const storyteller = gameState.players[gameState.currentStoryteller];
+                        if (storyteller.id === gameState.myPlayerId) {
+                            startTimer();
+                        }
+                    }
+                }, 600);
+            } else {
+                // Move to selection phase
+                gameState.phase = 'selection';
+                saveGameState();
+            }
+        }
+
+        function storytellerBonkedOut() {
+            gameState.players[gameState.currentStoryteller].bonkCount = 3;
+            
+            playSound('threeBonksDead');
+            
+            showAlert(`💀 ${gameState.players[gameState.currentStoryteller].name} has been bonked into submission!`, 5000);
+            
+            const activePlayers = gameState.players.filter(p => p.bonkCount < 3).length;
+            if (activePlayers === 0) {
+                setTimeout(() => endGame(false), 5000);
+                return;
+            }
+            
+            setTimeout(() => nextTurn(), 5000);
+        }
+
+        function updateSelectionSection() {
+            const guesses = Object.entries(gameState.responses)
+                .filter(([id, response]) => response.type === 'guess')
+                .map(([id, response]) => ({ id, ...response }));
+            
+            const list = document.getElementById('responsesList');
+            list.innerHTML = guesses.map(guess => `
+                <div class="response-card" onclick="selectResponse('${guess.id}')">
+                    <strong>${guess.playerName}:</strong> ${guess.text}
+                </div>
+            `).join('');
+        }
+
+        function selectResponse(playerId) {
+            const player = gameState.players.find(p => p.id === playerId);
+            if (!player) return;
+            
+            player.hasShared = true;
+            showAlert(`✓ Correct! ${player.name} understood the wisdom!`, 3000);
+            
+            const completedCount = gameState.players.filter(p => p.hasShared).length;
+            if (completedCount === gameState.players.length) {
+                setTimeout(() => endGame(true), 3000);
+                return;
+            }
+            
+            setTimeout(() => nextTurn(), 3000);
+        }
+
+        function passToNext() {
+            showAlert('No correct answers - passing to next storyteller', 3000);
+            setTimeout(() => nextTurn(), 3000);
+        }
+
+        function nextTurn() {
+            let attempts = 0;
+            do {
+                gameState.currentStoryteller = (gameState.currentStoryteller + 1) % gameState.players.length;
+                attempts++;
+            } while (gameState.players[gameState.currentStoryteller].bonkCount >= 3 && attempts < gameState.players.length);
+
+            gameState.currentWisdom = wisdomPool[Math.floor(Math.random() * wisdomPool.length)];
+            gameState.currentStory = '';
+            gameState.responses = {};
+            gameState.timeRemaining = 30;
+            gameState.phase = 'ready';
+            
+            saveGameState();
+            updateUI();
+        }
+
+        function updateFloatingResponses() {
+            if (gameState.phase !== 'guessing' && gameState.phase !== 'selection') {
+                document.getElementById('responsesDisplay').innerHTML = '';
+                return;
+            }
+
+            const responses = Object.values(gameState.responses);
+            if (responses.length === 0) return;
+
+            const display = document.getElementById('responsesDisplay');
+            display.innerHTML = responses.map(r => `
+                <div class="response-bubble">
+                    <strong>${r.playerName}:</strong> ${r.text}
+                </div>
+            `).join('');
+        }
+
+        function startTimer() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+
+            const storyteller = gameState.players[gameState.currentStoryteller];
+            if (storyteller?.id !== gameState.myPlayerId) return;
+
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeRemaining--;
+                
+                if (gameState.timeRemaining <= 10 && gameState.timeRemaining > 0) {
+                    playSound('warning');
+                }
+                
+                saveGameState();
+                
+                if (gameState.timeRemaining <= 0) {
+                    clearInterval(gameState.timerInterval);
+                    
+                    if (gameState.phase === 'prep') {
+                        if (!gameState.currentStory) {
+                            showAlert("Time's up! Storyteller didn't share in time - passing turn", 3000);
+                            setTimeout(() => nextTurn(), 3000);
+                        }
+                    } else if (gameState.phase === 'guessing') {
+                        evaluateResponses();
+                    }
+                }
+            }, 1000);
+        }
+
+        function endGame(victory) {
+            stopSyncInterval();
+            stopAmbientSound();
+            
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            
+            document.getElementById('gameScreen').classList.add('hidden');
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            gameOverScreen.classList.remove('hidden');
+            
+            if (victory) {
+                // TODO: Play win_fanfare sound
+                gameOverScreen.classList.add('enlightenment');
+                document.getElementById('gameOverTitle').textContent = '✨ AGE OF ENLIGHTENMENT ACHIEVED! ✨';
+                document.getElementById('gameOverMessage').textContent = 
+                    'Your tribe has mastered the ancient art of workplace safety communication! All members successfully shared their wisdom!';
+            } else {
+                // TODO: Play lose_fanfare sound
+                document.getElementById('gameOverTitle').textContent = '💀 TRIBE DEFEATED 💀';
+                document.getElementById('gameOverMessage').textContent = 
+                    'All storytellers have been bonked into submission. The wisdom remains unshared...';
+            }
+        }
+
+        function returnToLobby() {
+            stopSyncInterval();
+            stopAmbientSound();
+            if (gameState.roomCode) {
+                localStorage.removeItem(STORAGE_PREFIX + gameState.roomCode);
+            }
+            location.reload();
+        }
+
+        function showAlert(message, duration = 3000) {
+            const alertBox = document.getElementById('alertBox');
+            if (!alertBox) return;
+            
+            alertBox.innerHTML = `<div class="alert-box">${message}</div>`;
+            alertBox.style.display = 'block';
+            
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, duration);
+        }
+
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            document.querySelector('.sound-toggle').textContent = 
+                `🔊 Sound: ${gameState.soundEnabled ? 'ON' : 'OFF'}`;
+            
+            if (!gameState.soundEnabled) {
+                stopAmbientSound();
+            } else {
+                startAmbientSound();
+                ambientStarted = true;
+            }
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (gameState.roomCode && gameState.myPlayerId) {
+                leaveRoom();
+            }
+        });
+    </script>
+</body>
+</html>
